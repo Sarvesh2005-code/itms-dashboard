@@ -274,7 +274,26 @@ const Dashboard: React.FC = () => {
 
         {/* Quick Actions */}
         <div className="flex space-x-4">
-          <button className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000/api'}/export`);
+                const payload = await res.json();
+                const blob = new Blob([payload.csv], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = payload.filename || 'itms_export.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+              } catch (e) {
+                console.error('Export failed', e);
+              }
+            }}
+            className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export Data
           </button>

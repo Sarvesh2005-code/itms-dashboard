@@ -251,3 +251,23 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
         stats=stats_data,
         connection_status=connection_status
     )
+
+@router.get("/export", response_model=dict)
+async def export_csv(db: Session = Depends(get_db)):
+    """Export last 500 readings as CSV string (inline)."""
+    import csv
+    import io
+    readings = db.query(DBSensorReading).order_by(desc(DBSensorReading.timestamp)).limit(500).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'id','timestamp','ir_detection','vibration_raw','vibration_fault','distance_adjusted','distance_fault',
+        'acceleration_x','acceleration_y','acceleration_z','fault_detected','raw_sensor_data'
+    ])
+    for r in readings:
+        writer.writerow([
+            r.id, r.timestamp.isoformat() if r.timestamp else '', r.ir_detection, r.vibration_raw, r.vibration_fault,
+            r.distance_adjusted, r.distance_fault, r.acceleration_x, r.acceleration_y, r.acceleration_z,
+            r.fault_detected, r.raw_sensor_data
+        ])
+    return {"filename": "itms_export.csv", "csv": output.getvalue()}

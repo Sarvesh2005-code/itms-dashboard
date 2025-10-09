@@ -66,15 +66,27 @@ async def start_fallback_generator():
                 db = SessionLocal()
                 try:
                     latest = db.query(DBSensorReading).order_by(DBSensorReading.timestamp.desc()).first()
-                    # If no data ever or last reading older than 10s, inject synthetic reading
-                    needs_inject = latest is None or (now - latest.timestamp) > timedelta(seconds=10)
+                    # Always emit at a steady cadence if last > 2s to keep UI live
+                    needs_inject = latest is None or (now - latest.timestamp) > timedelta(seconds=2)
                     if needs_inject:
                         ir_detection = random.choice([0, 1])
-                        vibration_raw = random.randint(320, 480)
-                        distance_adjusted = round(random.uniform(8.0, 45.0), 1)
+                        vibration_raw = random.randint(330, 470)
+                        distance_adjusted = round(random.uniform(10.0, 40.0), 1)
                         acceleration_x = random.randint(-200, 200)
                         acceleration_y = random.randint(-200, 200)
                         acceleration_z = random.randint(9000, 11000)
+                        # Randomly trigger a fault approximately every 10-20 seconds
+                        trigger_fault = random.random() < 0.12
+                        if trigger_fault:
+                            # Push vibration into fault band or distance out of range
+                            if random.choice([True, False]):
+                                vibration_raw = random.randint(405, 445)
+                            else:
+                                distance_adjusted = random.choice([
+                                    round(random.uniform(2.0, 4.5), 1),
+                                    round(random.uniform(51.0, 60.0), 1)
+                                ])
+                            ir_detection = random.choice([0, 1])
                         vibration_fault = 400 <= vibration_raw <= 450
                         distance_fault = distance_adjusted < 5.0 or distance_adjusted > 50.0
                         fault_detected = vibration_fault or distance_fault or ir_detection == 1

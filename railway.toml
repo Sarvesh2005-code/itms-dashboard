@@ -1,0 +1,29 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+# Ensure we run from the backend folder where requirements.txt lives
+startCommand = "bash -lc 'cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT'"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[variables]
+# Helps Nixpacks pick Python
+NIXPACKS_PYTHON_VERSION = "3.11"
+PYTHONUNBUFFERED = "1"
+
+[build.nixpacksPlan]
+# Explicitly install backend dependencies from the backend directory
+providers = ["python"]
+
+[build.nixpacksPlan.phases]
+[build.nixpacksPlan.phases.install]
+cmds = [
+  "python --version",
+  "pip install --upgrade pip",
+  "pip install -r backend/requirements.txt"
+]
+
+

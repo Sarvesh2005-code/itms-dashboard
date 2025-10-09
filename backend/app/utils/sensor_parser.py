@@ -41,26 +41,18 @@ class SensorDataParser:
                 elif key == 'DIST_ADJ':
                     parsed_data['distance_adjusted'] = float(value)
                 elif key == 'ACC':
-                    # Parse acceleration data (x,y,z)
-                    # Find the next two components for y and z values
+                    # Parse acceleration data format ACC:x,y,z
                     try:
-                        acc_x = float(value)
-                        # Get y and z from next components
-                        acc_y_idx = components.index(component) + 1
-                        acc_z_idx = components.index(component) + 2
-                        
-                        if acc_y_idx < len(components) and acc_z_idx < len(components):
-                            acc_y = float(components[acc_y_idx])
-                            acc_z = float(components[acc_z_idx])
-                            
-                            parsed_data['acceleration_x'] = acc_x
-                            parsed_data['acceleration_y'] = acc_y
-                            parsed_data['acceleration_z'] = acc_z
+                        parts = value.split(',')
+                        if len(parts) >= 3:
+                            parsed_data['acceleration_x'] = float(parts[0])
+                            parsed_data['acceleration_y'] = float(parts[1])
+                            parsed_data['acceleration_z'] = float(parts[2])
                         else:
-                            # Default values if not enough components
-                            parsed_data['acceleration_x'] = acc_x
-                            parsed_data['acceleration_y'] = 0.0
-                            parsed_data['acceleration_z'] = 0.0
+                            # fallback if incomplete
+                            parsed_data['acceleration_x'] = float(parts[0]) if parts else 0.0
+                            parsed_data['acceleration_y'] = float(parts[1]) if len(parts) > 1 else 0.0
+                            parsed_data['acceleration_z'] = float(parts[2]) if len(parts) > 2 else 0.0
                     except (ValueError, IndexError):
                         parsed_data['acceleration_x'] = 0.0
                         parsed_data['acceleration_y'] = 0.0

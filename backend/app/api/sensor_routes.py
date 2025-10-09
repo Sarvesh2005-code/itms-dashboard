@@ -233,13 +233,13 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
     # Stats
     stats_data = await get_sensor_stats(db)
     
-    # Connection status (simple check based on last reading time)
+    # Connection status with tighter thresholds
     connection_status = "connected"
     if latest_reading:
         time_since_last = datetime.utcnow() - latest_reading.timestamp
-        if time_since_last > timedelta(minutes=5):
+        if time_since_last > timedelta(seconds=10):
             connection_status = "disconnected"
-        elif time_since_last > timedelta(minutes=2):
+        elif time_since_last > timedelta(seconds=5):
             connection_status = "warning"
     else:
         connection_status = "no_data"

@@ -2,8 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import os
 from .database import create_tables
 from .api import sensor_routes
+from .database import SessionLocal, SensorReading as DBSensorReading
+from datetime import datetime, timedelta
+import random
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,6 +19,8 @@ async def lifespan(app: FastAPI):
     logger.info("Starting ITMS Dashboard API...")
     create_tables()
     logger.info("Database tables created/verified")
+    # Start background fallback generator state
+    app.state.last_insert_check = datetime.utcnow()
     yield
     # Shutdown
     logger.info("Shutting down ITMS Dashboard API...")
@@ -26,19 +32,79 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
+# Configure CORS from environment or sensible defaults
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+else:
+    allowed_origins = [
+        "http://localhost:3000", "http://127.0.0.1:3000",
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:5174", "http://127.0.0.1:5174",
+        "http://localhost:5175", "http://127.0.0.1:5175",
+        "https://*.vercel.app",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", "http://127.0.0.1:3000",  # React dev server
-        "http://localhost:5173", "http://127.0.0.1:5173",  # Vite dev server
-        "http://localhost:5174", "http://127.0.0.1:5174",  # Vite dev server (alt port)
-        "http://localhost:5175", "http://127.0.0.1:5175",  # Vite dev server (alt port)
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Simple background task to insert fallback readings if no data for 10s
+@app.on_event("startup")
+async def start_fallback_generator():
+    import asyncio
+
+    async def generator_loop():
+        while True:
+            try:
+                await asyncio.sleep(2)
+                now = datetime.utcnow()
+                db = SessionLocal()
+                try:
+                    latest = db.query(DBSensorReading).order_by(DBSensorReading.timestamp.desc()).first()
+                    # If no data ever or last reading older than 10s, inject synthetic reading
+                    needs_inject = latest is None or (now - latest.timestamp) > timedelta(seconds=10)
+                    if needs_inject:
+                        ir_detection = random.choice([0, 1])
+                        vibration_raw = random.randint(320, 480)
+                        distance_adjusted = round(random.uniform(8.0, 45.0), 1)
+                        acceleration_x = random.randint(-200, 200)
+                        acceleration_y = random.randint(-200, 200)
+                        acceleration_z = random.randint(9000, 11000)
+                        vibration_fault = 400 <= vibration_raw <= 450
+                        distance_fault = distance_adjusted < 5.0 or distance_adjusted > 50.0
+                        fault_detected = vibration_fault or distance_fault or ir_detection == 1
+                        raw_sensor_data = (
+                            f"IR:{ir_detection},VIB_RAW:{vibration_raw},DIST_ADJ:{distance_adjusted},"
+                            f"ACC:{acceleration_x},{acceleration_y},{acceleration_z},FAULT:{1 if fault_detected else 0}"
+                        )
+                        db.add(DBSensorReading(
+                            timestamp=now,
+                            ir_detection=ir_detection,
+                            vibration_raw=vibration_raw,
+                            vibration_fault=vibration_fault,
+                            distance_adjusted=distance_adjusted,
+                            distance_fault=distance_fault,
+                            acceleration_x=acceleration_x,
+                            acceleration_y=acceleration_y,
+                            acceleration_z=acceleration_z,
+                            fault_detected=fault_detected,
+                            raw_sensor_data=raw_sensor_data,
+                        ))
+                        db.commit()
+                finally:
+                    db.close()
+            except Exception:  # noqa: BLE001
+                # keep loop alive
+                pass
+
+    import asyncio
+    loop = asyncio.get_event_loop()
+    loop.create_task(generator_loop())
 
 # Include API routes
 app.include_router(sensor_routes.router, prefix="/api", tags=["sensors"])

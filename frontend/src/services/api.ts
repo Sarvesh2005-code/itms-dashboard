@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { DashboardData, SensorReading, FaultLog, SensorStats, SensorDataInput } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

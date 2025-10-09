@@ -5,8 +5,22 @@ from datetime import datetime
 import os
 
 # Database configuration
-DATABASE_URL = "sqlite:///./itms_data.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+def _resolve_database_url() -> str:
+    env_url = os.getenv("DATABASE_URL")
+    if not env_url or env_url.strip() == "":
+        return "sqlite:///./itms_data.db"
+    # Railway often provides postgres URLs that start with postgres://; SQLAlchemy prefers postgresql+psycopg2://
+    if env_url.startswith("postgres://"):
+        env_url = env_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif env_url.startswith("postgresql://"):
+        env_url = env_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return env_url
+
+DATABASE_URL = _resolve_database_url()
+
+# SQLite needs special thread option; others don't
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

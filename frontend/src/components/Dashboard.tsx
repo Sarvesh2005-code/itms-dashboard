@@ -68,9 +68,9 @@ const Dashboard: React.FC = () => {
   const stats = data?.stats;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="glass shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
@@ -123,7 +123,7 @@ const Dashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="glass p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Total Readings</p>
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="glass p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Active Faults</p>
@@ -141,7 +141,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="glass p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Fault Rate</p>
@@ -150,7 +150,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="glass p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">IR Detections Today</p>
@@ -213,7 +213,7 @@ const Dashboard: React.FC = () => {
         {data?.recent_faults && data.recent_faults.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Faults</h2>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="glass rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">

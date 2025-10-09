@@ -53,7 +53,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Simple background task to insert fallback readings if no data for 10s
+# Simple background task to insert fallback readings to keep UI live
 @app.on_event("startup")
 async def start_fallback_generator():
     import asyncio
@@ -117,6 +117,44 @@ async def start_fallback_generator():
     import asyncio
     loop = asyncio.get_event_loop()
     loop.create_task(generator_loop())
+
+@app.get("/api/simulate/once")
+async def simulate_once():
+    """Force one synthetic reading immediately (for debugging)."""
+    from random import randint, choice, random
+    now = datetime.utcnow()
+    db = SessionLocal()
+    try:
+        ir_detection = choice([0, 1])
+        vibration_raw = randint(330, 470)
+        distance_adjusted = round(random() * 30 + 10.0, 1)
+        acceleration_x = randint(-200, 200)
+        acceleration_y = randint(-200, 200)
+        acceleration_z = randint(9000, 11000)
+        vibration_fault = 400 <= vibration_raw <= 450
+        distance_fault = distance_adjusted < 5.0 or distance_adjusted > 50.0
+        fault_detected = vibration_fault or distance_fault or ir_detection == 1
+        raw_sensor_data = (
+            f"IR:{ir_detection},VIB_RAW:{vibration_raw},DIST_ADJ:{distance_adjusted},"
+            f"ACC:{acceleration_x},{acceleration_y},{acceleration_z},FAULT:{1 if fault_detected else 0}"
+        )
+        db.add(DBSensorReading(
+            timestamp=now,
+            ir_detection=ir_detection,
+            vibration_raw=vibration_raw,
+            vibration_fault=vibration_fault,
+            distance_adjusted=distance_adjusted,
+            distance_fault=distance_fault,
+            acceleration_x=acceleration_x,
+            acceleration_y=acceleration_y,
+            acceleration_z=acceleration_z,
+            fault_detected=fault_detected,
+            raw_sensor_data=raw_sensor_data,
+        ))
+        db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
 
 # Include API routes
 app.include_router(sensor_routes.router, prefix="/api", tags=["sensors"])

@@ -254,10 +254,16 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
 
 @router.get("/export", response_model=dict)
 async def export_csv(db: Session = Depends(get_db)):
-    """Export last 500 readings as CSV string (inline)."""
+    """Export last 6 hours of readings as CSV string (inline)."""
     import csv
     import io
-    readings = db.query(DBSensorReading).order_by(desc(DBSensorReading.timestamp)).limit(500).all()
+    cutoff = datetime.utcnow() - timedelta(hours=6)
+    readings = (
+        db.query(DBSensorReading)
+        .filter(DBSensorReading.timestamp >= cutoff)
+        .order_by(desc(DBSensorReading.timestamp))
+        .all()
+    )
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([

@@ -1,6 +1,6 @@
 import Dashboard from './components/Dashboard'
 import './App.css'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 function App() {
   const [dark, setDark] = useState<boolean>(false)

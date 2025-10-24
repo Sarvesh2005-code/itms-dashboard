@@ -8,6 +8,7 @@ interface UseDashboardDataReturn {
   error: string | null;
   refreshData: () => Promise<void>;
   isConnected: boolean;
+  isFallbackMode: boolean;
 }
 
 // Generate random sensor reading
@@ -53,7 +54,7 @@ const generateRandomFault = (id: number, readingId: number, timestamp: string): 
   
   const faultType = faultTypes[Math.floor(Math.random() * faultTypes.length)];
   const severity = severities[Math.floor(Math.random() * severities.length)];
-  const description = descriptions[faultTypes.indexOf(faultType)];
+  const description = descriptions[faultTypes.indexOf(faultType)] || 'Sensor anomaly detected';
   
   return {
     id,
@@ -113,6 +114,7 @@ export const useDashboardData = (refreshInterval: number = 5000): UseDashboardDa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(true);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -120,6 +122,7 @@ export const useDashboardData = (refreshInterval: number = 5000): UseDashboardDa
       const dashboardData = await sensorAPI.getDashboardData();
       setData(dashboardData);
       setIsConnected(true);
+      setIsFallbackMode(false);
     } catch (err) {
       // If API call fails, use fallback data
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboard data';
@@ -130,6 +133,7 @@ export const useDashboardData = (refreshInterval: number = 5000): UseDashboardDa
       // Generate fallback data
       const fallbackData = generateFallbackData();
       setData(fallbackData);
+      setIsFallbackMode(true);
     } finally {
       setLoading(false);
     }
@@ -157,6 +161,7 @@ export const useDashboardData = (refreshInterval: number = 5000): UseDashboardDa
     loading,
     error,
     refreshData,
-    isConnected
+    isConnected,
+    isFallbackMode
   };
 };

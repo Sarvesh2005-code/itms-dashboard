@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RefreshCw, Settings, Download, Bell } from 'lucide-react';
+import { RefreshCw, Settings, Download, Bell, AlertTriangle } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import StatusIndicator from './StatusIndicator';
 import SensorCard from './SensorCard';
@@ -7,7 +7,7 @@ import AlertSystem from './AlertSystem';
 import type { SensorReading, FaultLog } from '../types';
 
 const Dashboard: React.FC = () => {
-  const { data, loading, error, refreshData } = useDashboardData(5000);
+  const { data, loading, error, refreshData, isFallbackMode } = useDashboardData(5000);
   const [showNotifications, setShowNotifications] = useState(true);
 
   const handleNewAlert = (alert: FaultLog) => {
@@ -69,6 +69,18 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Fallback Mode Banner */}
+      {isFallbackMode && (
+        <div className="bg-warning-50 border-b border-warning-200 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center">
+            <AlertTriangle className="h-5 w-5 text-warning-600 mr-2" />
+            <p className="text-warning-800 font-medium">
+              Hardware not connected. Showing simulation using random data.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="glass shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
